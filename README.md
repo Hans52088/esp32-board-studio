@@ -1,5 +1,9 @@
 # 光點工房 · ESP32 看板設定器
 
+**版本：v1.2.0 · 作者：WHY · 更新日期：2026-11-23**
+
+[更新紀錄](CHANGELOG.md)
+
 線上使用：[開啟看板設定器](https://hans52088.github.io/esp32-board-studio/)
 
 無須安裝、無須後端的繁體中文網頁，適用單片 64×32 HUB75 LED 面板與經典 ESP32。開啟 `index.html` 即可使用，也可直接放上 GitHub Pages。沒有第三方 CDN、追蹤或外部字型依賴。
@@ -7,7 +11,7 @@
 ## 放到 GitHub Pages
 
 1. 在 GitHub 新增一個儲存庫。
-2. 將本資料夾內的 `index.html`、`style.css`、`app.js`、`firmware.js`、`.nojekyll` 與本說明上傳到儲存庫最上層。
+2. 將本資料夾內的 `index.html`、`style.css`、`app.js`、`firmware.js`、`release.js`、`.nojekyll` 與本說明上傳到儲存庫最上層。
 3. 進入儲存庫 Settings → Pages，選擇 Deploy from a branch。
 4. Branch 選擇 `main`，資料夾選 `/ (root)`，按 Save。
 5. 待 GitHub 完成部署後，開啟 Pages 顯示的網站網址。
@@ -74,6 +78,8 @@ LED 預覽以瀏覽器系統中文字型繪製到 64×32 像素緩衝區，再�
 
 ## 檔案結構
 
+- `release.js`：版本、作者、日期與網站更新紀錄的共用資料來源
+- `CHANGELOG.md`：版本更新紀錄
 - `index.html`：頁面與說明
 - `style.css`：響應式版面
 - `app.js`：設定表單、驗證、LED 預覽、設定匯入／匯出、程式碼產生
@@ -123,3 +129,9 @@ GPIO 5、12、15 涉及開機設定，外部電路不可在啟動時強制拉到
 設定檔匯出格式為 version 2，保留讀取 version 1 的相容性。舊版 `rfCode: 0` 轉成嗅探；舊版非零 RF 碼轉成指定模式的一筆清單。
 
 接線參考：[HUB75 函式庫](https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA#2-wiring-the-esp32-to-an-led-matrix-panel)、[Espressif GPIO 說明](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html)、[Adafruit 面板供電](https://learn.adafruit.com/32x16-32x32-rgb-led-matrix/powering)。
+
+## 版本維護
+
+每次發布請更新 `release.js` 的 version、date 與 history，以及 `index.html` 資源網址的版本參數、README 和 CHANGELOG。網站頁首、頁尾、更新紀錄、匯出程式中的 `BOARD_STUDIO_VERSION`／`BOARD_STUDIO_AUTHOR`／`BOARD_STUDIO_RELEASE_DATE`，以及設定檔的 generator 資訊，均使用 `release.js` 的版本資料。
+
+設定檔的 `version: 2` 表示資料格式，不是網站版本，僅在設定檔結構需要升級時變更。作者固定為 WHY。

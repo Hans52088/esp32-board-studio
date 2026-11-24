@@ -1,5 +1,6 @@
 'use strict';
 (() => {
+  const release = window.BOARD_RELEASE;
   const sections = [
     ['connection','連線與硬體','設定裝置連線','使用 ESP32-WROOM-32 與標準 64×32、1/16 掃描 HUB75 面板。下方有完整接線與組裝教學，匯出程式已明確指定相同 GPIO。'],
     ['boot','開機畫面','一開機，就有你的風格','開機後立即播放；Wi-Fi 在背景連線。顯示結束後回到日期或預設一般訊息。'],
@@ -119,7 +120,7 @@
   const cppString=s=>'"'+s.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/[\x00-\x1f\x7f]/g,c=>'\\'+c.charCodeAt(0).toString(8).padStart(3,'0'))+'"';
   function generate(c){
     const rf=parseRfCodes(c.rfCodes);
-    const values={rfSniff:c.rfMode==='sniff'?'true':'false',rfCodeArray:rf.length?rf.map(n=>String(n)+'UL').join(', '):'0UL',rfCodeCount:String(rf.length)};
+    const values={appVersion:cppString(release.version),appAuthor:cppString(release.author),releaseDate:cppString(release.date),rfSniff:c.rfMode==='sniff'?'true':'false',rfCodeArray:rf.length?rf.map(n=>String(n)+'UL').join(', '):'0UL',rfCodeCount:String(rf.length)};
     for(const f of schema){const v=c[f.key];
       if(f.type==='color'){const n=parseInt(v.slice(1),16);values[f.key]='0x'+((((n>>19)&31)<<11)|(((n>>10)&63)<<5)|((n>>3)&31)).toString(16).padStart(4,'0');}
       else if(f.type==='time'){const [h,m]=v.split(':').map(Number);values[f.key]=h*60+m;}
@@ -143,7 +144,7 @@
   $('showCode').onclick=()=>{if(checkExport()){$('codeOutput').value=generate(config);$('codeDialog').showModal();}};
   $('closeCode').onclick=()=>$('codeDialog').close();
   $('copyCode').onclick=async()=>{try{await navigator.clipboard.writeText($('codeOutput').value);notify('已複製完整程式碼');}catch{$('codeOutput').select();notify('請按 Ctrl+C（Mac：⌘C）複製選取的程式碼');}};
-  $('saveConfig').onclick=()=>{const errors=validate(config);if(errors.length){notify(errors[0][1]);return;}const clean={...config,token:'',password:''};download('led-board-settings.json',JSON.stringify({version:2,settings:clean},null,2),'application/json');notify('已匯出設定（不含 Token 與 Wi-Fi 密碼）');};
+  $('saveConfig').onclick=()=>{const errors=validate(config);if(errors.length){notify(errors[0][1]);return;}const clean={...config,token:'',password:''};download('led-board-settings.json',JSON.stringify({version:2,generator:{version:release.version,author:release.author,releaseDate:release.date},settings:clean},null,2),'application/json');notify('已匯出設定（不含 Token 與 Wi-Fi 密碼）');};
   $('importConfig').onclick=()=>$('configFile').click();
   $('configFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>100000)throw Error('設定檔過大');const obj=JSON.parse(await file.text());config=migrateConfig(obj);renderForm();restart();notify('已匯入設定，請補填連線資料');}catch(err){notify('無法匯入：'+err.message);}e.target.value='';};
   $('reset').onclick=()=>{if(confirm('恢復所有預設設定？目前填入的連線資料也會清除。')){config={...defaults};renderForm();restart();notify('已恢復預設');}};
@@ -183,7 +184,11 @@
     $('elapsed').textContent=String(Math.floor(elapsed/60000)).padStart(2,'0')+':'+String(Math.floor(elapsed/1000)%60).padStart(2,'0');
     requestAnimationFrame(frame);
   }
+  document.querySelectorAll('[data-release-version]').forEach(el=>el.textContent='v'+release.version);
+  document.querySelectorAll('[data-release-author]').forEach(el=>el.textContent=release.author);
+  document.querySelectorAll('[data-release-date]').forEach(el=>{el.textContent=release.date;el.setAttribute('datetime',release.date);});
+  $('releaseHistory').innerHTML=release.history.map(item=>`<article><h3>v${escapeHtml(item.version)} <time>${escapeHtml(item.date)}</time></h3><ul>${item.changes.map(change=>`<li>${escapeHtml(change)}</li>`).join('')}</ul></article>`).join('');
   renderForm();requestAnimationFrame(frame);
   // Pure helpers are exposed for independent verification and custom extensions.
-  window.BoardStudio={generate,validate,defaults,schema,parseRfCodes,migrateConfig};
+  window.BoardStudio={release,generate,validate,defaults,schema,parseRfCodes,migrateConfig};
 })();

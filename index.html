@@ -1,7 +1,7 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="ESP32 HUB75 看板設定、即時預覽與 Arduino 完整程式碼產生器"><title>光點工房 · ESP32 看板設定器</title><link rel="stylesheet" href="style.css?v=2"><script defer src="firmware.js?v=2"></script><script defer src="app.js?v=2"></script></head>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="ESP32 HUB75 看板設定、即時預覽與 Arduino 完整程式碼產生器"><title>光點工房 · ESP32 看板設定器</title><link rel="stylesheet" href="style.css?v=1.2.0"><script defer src="release.js?v=1.2.0"></script><script defer src="firmware.js?v=1.2.0"></script><script defer src="app.js?v=1.2.0"></script></head>
 <body>
-<header><a class="brand" href="#"><span class="logo">▦</span><span>光點工房<small>LED BOARD STUDIO</small></span></a><span class="chip">ESP32 · HUB75 · 64 × 32</span></header>
+<header><a class="brand" href="#"><span class="logo">▦</span><span>光點工房<small>LED BOARD STUDIO</small></span></a><div class="header-meta"><span class="chip">ESP32 · HUB75 · 64 × 32</span><div class="release-meta"><a class="version-badge" href="#changelog" data-release-version>版本資訊</a><span>作者：<b data-release-author>WHY</b></span></div></div></header>
 <main>
 <div class="intro"><span class="eyebrow">把想說的話，點亮。</span><h1>你的看板，你來定義。</h1><p>調整文字與播放方式，即時預覽，再帶走可上傳的完整程式。</p><a class="tutorial-link" href="#assembly">第一次組裝？查看接線與七步教學</a></div>
 <div class="workspace">
@@ -26,6 +26,7 @@
 <details class="sources"><summary>接線依據與官方說明</summary><ul><li><a href="https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA#2-wiring-the-esp32-to-an-led-matrix-panel" target="_blank" rel="noopener noreferrer">HUB75 函式庫：GPIO 對照、面板相容性與電源</a></li><li><a href="https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html" target="_blank" rel="noopener noreferrer">Espressif：ESP32 GPIO 限制</a></li><li><a href="https://learn.adafruit.com/32x16-32x32-rgb-led-matrix/powering" target="_blank" rel="noopener noreferrer">Adafruit：RGB 面板供電說明</a></li><li><a href="https://docs.espressif.com/projects/arduino-esp32/en/latest/installing.html" target="_blank" rel="noopener noreferrer">Espressif：Arduino ESP32 安裝</a></li><li><a href="https://docs.blynk.io/en/getting-started/template-quick-setup" target="_blank" rel="noopener noreferrer">Blynk：Template 建立教學</a></li></ul><p>排程需 NTP 同步成功。門鈴、測試、開機、公告、日期／一般訊息依序決定顯示優先權。Blynk 即時內容只保存在裝置記憶體，重開機回到匯出時的初始設定。此教學未指定你的面板與接收器型號，實際電壓、驅動晶片與接口仍需核對產品說明。</p></details>
 </section>
 
-</main><footer>光點工房 <span>以繁體中文，點亮每一則訊息。</span></footer><div id="toast" role="status" aria-live="polite"></div>
+<section class="release-notes" id="changelog" aria-label="版本資訊與更新紀錄"><details><summary>版本資訊與更新紀錄</summary><p>目前版本 <strong data-release-version></strong> · 作者：<strong data-release-author></strong> · 更新日期：<time data-release-date></time></p><div id="releaseHistory"></div><p class="note">早期兩次發布原先未標示版本，現依發布順序補列為 v1.0.0 與 v1.1.0。設定檔的 version 欄位是資料格式版本，與網站版本分開維護。</p></details></section>
+</main><footer><div>光點工房 <span data-release-version></span> · 作者：<span data-release-author>WHY</span></div><span>以繁體中文，點亮每一則訊息。</span></footer><div id="toast" role="status" aria-live="polite"></div>
 <dialog id="codeDialog"><div class="card-heading"><h2>完整 ESP32 程式碼</h2><button id="closeCode" type="button" class="secondary">關閉</button></div><p class="note">內容依目前設定產生，可直接下載或複製至 Arduino IDE。</p><textarea id="codeOutput" readonly spellcheck="false" aria-label="完整程式碼"></textarea><button id="copyCode" class="primary" type="button">複製程式碼</button></dialog>
 </body></html>
