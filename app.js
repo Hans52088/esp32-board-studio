@@ -1,7 +1,7 @@
 'use strict';
 (() => {
   const sections = [
-    ['connection','連線與硬體','設定裝置連線','單片 64×32 面板，沿用原本 HUB75 預設接線。RF GPIO 僅列出經典 ESP32 預設面板接線以外的選項。'],
+    ['connection','連線與硬體','設定裝置連線','使用 ESP32-WROOM-32 與標準 64×32、1/16 掃描 HUB75 面板。下方有完整接線與組裝教學，匯出程式已明確指定相同 GPIO。'],
     ['boot','開機畫面','一開機，就有你的風格','開機後立即播放；Wi-Fi 在背景連線。顯示結束後回到日期或預設一般訊息。'],
     ['message','一般訊息','讓日常訊息更醒目','文字超過面板寬度會自動捲動。顯示時間結束後，回到萬年曆。'],
     ['announce','公告','重要的事，定時提醒','預設公告會依排程播放。從 Blynk V1 發送新公告，會立刻播放指定時間，並替換後續排程內容。'],
@@ -41,7 +41,8 @@
   content('bell','門鈴響起','外面有人','#ff0000','#ffff00',true);
   add('bell','bellEnabled','啟用 433MHz 門鈴接收','checkbox',true);
   add('bell','rfPin','433MHz DATA GPIO','select',34,{options:[['34','GPIO 34'],['35','GPIO 35'],['36','GPIO 36'],['39','GPIO 39'],['32','GPIO 32'],['33','GPIO 33']],hint:'適用經典 ESP32；實際請核對開發板及 HUB75 接線。'});
-  add('bell','rfCode','門鈴 RF 碼','number',0,{min:0,max:4294967295,hint:'0 為嗅探模式，任何成功解碼的非零訊號皆觸發。開啟 Serial Monitor（115200）讀取正式碼值。'});
+  add('bell','rfMode','RF 觸發模式','choice','sniff',{options:[['sniff','嗅探模式：接收所有可解碼的非零碼'],['match','指定模式：只接受下列 RF 碼']],hint:'第一次使用先嗅探；讀取碼值後改為指定模式，再重新下載並上傳程式。'});
+  add('bell','rfCodes','門鈴 RF 碼清單（最多 32 組）','textarea','',{maxLength:2048,hint:'每行一組，或以逗號、空白分隔。填十進位整數 1–4294967295，重複碼會自動合併。任一碼符合即觸發相同門鈴畫面；指定模式至少需要一組，請勿填 0。'});
   add('bell','bellSeconds','門鈴畫面顯示（秒）','number',60,{min:1,max:3600});
   add('date','dateColor1','日期顏色','color','#ff0000');
   add('date','dateColor2','星期顏色','color','#00ff00');
@@ -62,7 +63,8 @@
     const id='field-'+f.key, v=config[f.key];
     const attrs=`id="${id}" name="${f.key}" ${f.hint?`aria-describedby="hint-${f.key}"`:''}`;
     let control;
-    if(f.type==='select') control=`<select ${attrs}>${f.options.map(([v1,t])=>`<option value="${v1}" ${String(v)===v1?'selected':''}>${t}</option>`).join('')}</select>`;
+    if(f.type==='textarea') control=`<textarea ${attrs} rows="5" maxlength="${f.maxLength}" placeholder="例如：12345678&#10;87654321" spellcheck="false">${escapeHtml(v)}</textarea>`;
+    else if(f.type==='select'||f.type==='choice') control=`<select ${attrs}>${f.options.map(([v1,t])=>`<option value="${v1}" ${String(v)===v1?'selected':''}>${t}</option>`).join('')}</select>`;
     else control=`<input ${attrs} type="${f.type}" ${f.type==='checkbox'?(v?'checked':''):`value="${escapeHtml(v)}"`} ${f.min!==undefined?`min="${f.min}" max="${f.max}" step="1"`:''} ${f.maxLength?`maxlength="${f.maxLength}"`:''} autocomplete="off">`;
     return `<div class="field">${f.type==='checkbox'?control:''}<label for="${id}">${f.label}</label>${f.type!=='checkbox'?control:''}${f.hint?`<small id="hint-${f.key}">${f.hint}</small>`:''}</div>`;
   }
@@ -71,15 +73,37 @@
     const section=sections.find(s=>s[0]===active);
     $('settings').innerHTML=`<h2>${section[2]}</h2><p class="section-sub">${section[3]}</p>`+schema.filter(f=>f.group===active).map(field).join('')+'<p id="validation" role="status"></p>';
   }
+  function parseRfCodes(value){
+    if(typeof value!=='string')throw Error('RF 碼清單必須為文字');
+    const tokens=value.trim().split(/[\s,，;；]+/u).filter(Boolean);
+    if(tokens.some(t=>!/^\d+$/.test(t)||!Number.isSafeInteger(Number(t))||Number(t)<1||Number(t)>4294967295))throw Error('每組 RF 碼須為 1–4294967295 的十進位整數，不可填 0、負數或小數');
+    const codes=[...new Set(tokens.map(Number))];
+    if(codes.length>32)throw Error('RF 碼最多可設定 32 組');
+    return codes;
+  }
+  function migrateConfig(obj){
+    if(!obj||![1,2].includes(obj.version)||!obj.settings||typeof obj.settings!=='object'||Array.isArray(obj.settings))throw Error('不支援的設定檔格式');
+    const next={...defaults};
+    for(const f of schema)if(Object.hasOwn(obj.settings,f.key))next[f.key]=obj.settings[f.key];
+    if(obj.version===1&&Object.hasOwn(obj.settings,'rfCode')){
+      const code=obj.settings.rfCode;
+      if(!Number.isInteger(code)||code<0||code>4294967295)throw Error('舊版 RF 碼無效');
+      next.rfMode=code===0?'sniff':'match';next.rfCodes=code===0?'':String(code);
+    }
+    const errors=validate(next);if(errors.length)throw Error(errors[0][1]);
+    return next;
+  }
   function validate(c,credentials=false){
     const errors=[];
     for(const f of schema){const v=c[f.key];
       if(f.type==='checkbox'){if(typeof v!=='boolean')errors.push([f.key,`${f.label}必須為開關值`]);}
+      else if(f.type==='choice'){if(!f.options.some(o=>o[0]===v))errors.push([f.key,`${f.label}選項無效`]);}
       else if(f.type==='number'||f.type==='select'){
         if(!Number.isInteger(v)||(f.min!==undefined&&(v<f.min||v>f.max))||(f.options&&!f.options.some(o=>+o[0]===v)))errors.push([f.key,`${f.label}數值無效${f.min!==undefined?`，範圍 ${f.min}–${f.max}`:''}`]);
       }else if(typeof v!=='string'||(f.type==='color'&&!/^#[a-f\d]{6}$/i.test(v))||(f.type==='time'&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(v))||(f.maxLength&&v.length>f.maxLength))errors.push([f.key,`${f.label}格式或長度無效`]);
-      else if(/[\x00-\x1f\x7f]/.test(v)) errors.push([f.key,`${f.label}不可包含換行或控制字元`]);
+      else if((f.key==='rfCodes'?/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/:/[\x00-\x1f\x7f]/).test(v)) errors.push([f.key,`${f.label}不可包含換行或控制字元`]);
     }
+    try{const codes=parseRfCodes(c.rfCodes);if(c.rfMode==='match'&&!codes.length)errors.push(['rfCodes','指定模式至少需填入一組 RF 碼']);}catch(error){errors.push(['rfCodes',error.message]);}
     if(c.scheduleEnabled&&c.announceMinutes>c.scheduleInterval)errors.push(['scheduleInterval','公告間隔須大於或等於公告顯示分鐘數']);
     if(credentials)for(const k of ['templateId','templateName','token','ssid'])if(!String(c[k]).trim()) errors.push([k,`請填入${schema.find(f=>f.key===k).label}`]);
     return errors;
@@ -94,7 +118,8 @@
   }
   const cppString=s=>'"'+s.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/[\x00-\x1f\x7f]/g,c=>'\\'+c.charCodeAt(0).toString(8).padStart(3,'0'))+'"';
   function generate(c){
-    const values={};
+    const rf=parseRfCodes(c.rfCodes);
+    const values={rfSniff:c.rfMode==='sniff'?'true':'false',rfCodeArray:rf.length?rf.map(n=>String(n)+'UL').join(', '):'0UL',rfCodeCount:String(rf.length)};
     for(const f of schema){const v=c[f.key];
       if(f.type==='color'){const n=parseInt(v.slice(1),16);values[f.key]='0x'+((((n>>19)&31)<<11)|(((n>>10)&63)<<5)|((n>>3)&31)).toString(16).padStart(4,'0');}
       else if(f.type==='time'){const [h,m]=v.split(':').map(Number);values[f.key]=h*60+m;}
@@ -118,9 +143,9 @@
   $('showCode').onclick=()=>{if(checkExport()){$('codeOutput').value=generate(config);$('codeDialog').showModal();}};
   $('closeCode').onclick=()=>$('codeDialog').close();
   $('copyCode').onclick=async()=>{try{await navigator.clipboard.writeText($('codeOutput').value);notify('已複製完整程式碼');}catch{$('codeOutput').select();notify('請按 Ctrl+C（Mac：⌘C）複製選取的程式碼');}};
-  $('saveConfig').onclick=()=>{const errors=validate(config);if(errors.length){notify(errors[0][1]);return;}const clean={...config,token:'',password:''};download('led-board-settings.json',JSON.stringify({version:1,settings:clean},null,2),'application/json');notify('已匯出設定（不含 Token 與 Wi-Fi 密碼）');};
+  $('saveConfig').onclick=()=>{const errors=validate(config);if(errors.length){notify(errors[0][1]);return;}const clean={...config,token:'',password:''};download('led-board-settings.json',JSON.stringify({version:2,settings:clean},null,2),'application/json');notify('已匯出設定（不含 Token 與 Wi-Fi 密碼）');};
   $('importConfig').onclick=()=>$('configFile').click();
-  $('configFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>100000)throw Error('設定檔過大');const obj=JSON.parse(await file.text());if(obj.version!==1||!obj.settings||typeof obj.settings!=='object'||Array.isArray(obj.settings))throw Error('不支援的設定檔格式');const next={...defaults};for(const f of schema)if(Object.hasOwn(obj.settings,f.key))next[f.key]=obj.settings[f.key];const errors=validate(next);if(errors.length)throw Error(errors[0][1]);config=next;renderForm();restart();notify('已匯入設定，請補填連線資料');}catch(err){notify('無法匯入：'+err.message);}e.target.value='';};
+  $('configFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>100000)throw Error('設定檔過大');const obj=JSON.parse(await file.text());config=migrateConfig(obj);renderForm();restart();notify('已匯入設定，請補填連線資料');}catch(err){notify('無法匯入：'+err.message);}e.target.value='';};
   $('reset').onclick=()=>{if(confirm('恢復所有預設設定？目前填入的連線資料也會清除。')){config={...defaults};renderForm();restart();notify('已恢復預設');}};
 
   // Render text to a 64×32 buffer and sample its pixels into physical LED dots.
@@ -160,5 +185,5 @@
   }
   renderForm();requestAnimationFrame(frame);
   // Pure helpers are exposed for independent verification and custom extensions.
-  window.BoardStudio={generate,validate,defaults,schema};
+  window.BoardStudio={generate,validate,defaults,schema,parseRfCodes,migrateConfig};
 })();
