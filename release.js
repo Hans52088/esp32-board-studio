@@ -1,9 +1,17 @@
-// Release metadata: update this file and asset cache tags for each release.
 window.BOARD_RELEASE = Object.freeze({
-  "version": "1.2.0",
+  "version": "1.3.0",
   "author": "WHY",
-  "date": "2026-11-23",
+  "date": "2026-11-24",
   "history": [
+    {
+      "version": "1.3.0",
+      "date": "2026-11-24",
+      "changes": [
+        "加入斷電保存，每組門鈴可指定上下排文字、顏色與提醒秒數。",
+        "新增分時亮度及公告星期、時段與到期日。",
+        "加入有密碼保護的區網設定與狀態頁，以及選用的 Arduino OTA 更新。"
+      ]
+    },
     {
       "version": "1.2.0",
       "date": "2026-11-23",
