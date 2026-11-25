@@ -1,6 +1,6 @@
 # 光點工房 · ESP32 看板設定器
 
-**版本：v1.3.0 · 作者：WHY · 更新日期：2026-11-24**
+**版本：v1.4.0 · 作者：WHY · 更新日期：2026-11-25**
 
 [更新紀錄](CHANGELOG.md)
 
@@ -140,7 +140,7 @@ GPIO 5、12、15 涉及開機設定，外部電路不可在啟動時強制拉到
 
 ### 首次啟用區網管理
 
-本版完整韌體已用 ESP32 Dev Module（4 MB）、esp32 by Espressif Systems 3.3.7 與 Minimal SPIFFS 分區編譯通過。Arduino IDE「工具 → Partition Scheme」請選 Minimal SPIFFS（1.9 MB APP with OTA）。測試使用 LovyanGFX 1.3.0、Blynk 1.4.0、ESP32 HUB75 LED MATRIX PANEL DMA Display 3.1.1、rc-switch 2.6.4、Adafruit GFX Library 2.0.0。含繁體字型與 OTA 的測試設定使用 1,742,687／1,966,080 bytes。ESP32 核心 4.0.0 搭配上述 LovyanGFX 版本編譯失敗，請選 3.3.7。
+本版完整韌體已用 ESP32 Dev Module（4 MB）、esp32 by Espressif Systems 3.3.7 與 Minimal SPIFFS 分區編譯通過。Arduino IDE「工具 → Partition Scheme」請選 Minimal SPIFFS（1.9 MB APP with OTA）。測試使用 LovyanGFX 1.3.0、Blynk 1.4.0、ESP32 HUB75 LED MATRIX PANEL DMA Display 3.1.1、rc-switch 2.6.4、Adafruit GFX Library 2.0.0。含繁體字型與 OTA 的測試設定使用 1,745,235／1,966,080 bytes。ESP32 核心 4.0.0 搭配上述 LovyanGFX 版本編譯失敗，請選 3.3.7。
 
 在「連線與硬體」設定至少 12 字元的管理密碼，下載韌體並以 USB 上傳一次。手機連到與看板相同的可信任 Wi-Fi，在 Arduino 序列埠監控視窗（115200）找 Board IP，使用瀏覽器開啟該 http 網址，帳號 admin，密碼為剛才設定的管理密碼。留空時區網管理和 OTA 都關閉。此管理頁使用 HTTP，僅在可信任的區網使用，請勿設定路由器轉發。
 
@@ -177,3 +177,9 @@ GPIO 5、12、15 涉及開機設定，外部電路不可在啟動時強制拉到
 5. 暫時關閉 Wi-Fi，觀察序列埠的離線提示。本機頁須在網路恢復後重新開啟，檢查 IP、NTP 與 Blynk 狀態。
 6. 用同一區網的手機登入看板，修改訊息並儲存，確認面板隨即顯示新內容。
 7. 保持供電，在 Arduino IDE 選看板網路埠並上傳含不同開機文字的韌體。確認重啟後出現新文字，原本保存的日常設定仍在。
+
+## v1.4.0 每日重啟、手動指令與看門狗
+
+在「連線與硬體」或看板本機管理頁勾選「啟用每日自動重啟」，設定看板當地時間。本機修改後按「儲存並套用」。預設關閉，預填 03:00。看板取得有效時間後，只在指定分鐘重啟，每日最多一次，錯過當天時間就等隔天。要立即重啟，在手機 Blynk 的 V1 訊息欄單獨輸入 /重開機 或 /restart，大小寫與前後空白都須完全相符。手動指令可在排程關閉時使用。韌體自動啟用 60 秒看門狗，主程式持續無回應時會觸發系統重置。重啟會短暫中斷顯示並重新連線，裝置會讀回已儲存的設定。
+
+驗收時，可先把每日時間設為下一分鐘並儲存。確認看板重開一次、同一分鐘內沒有再次重開。關閉排程後，可分別從 Blynk V1 傳送兩個手動指令，每次待看板重新連線後再測下一個。

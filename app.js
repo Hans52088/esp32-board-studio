@@ -56,6 +56,8 @@
 
   add('connection','adminPassword','本機管理密碼（至少 12 個字元）','password','',{hint:'帳號 admin；留空即關閉區網管理與 OTA。此密碼只寫入韌體。'});
   add('connection','otaEnabled','允許 Arduino IDE 無線更新','checkbox',false);
+  add('connection','restartEnabled','啟用每日自動重啟','checkbox',false);
+  add('connection','restartTime','每日重啟時間','time','03:00',{hint:'依看板時區，校時後每天最多執行一次。'});
   add('connection','dimEnabled','啟用分時亮度','checkbox',false);
   add('connection','dimLevel','時段內亮度（0–255）','number',25,{min:0,max:255});
   add('connection','dimFrom','亮度時段起點','time','18:00');

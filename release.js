@@ -1,8 +1,15 @@
 window.BOARD_RELEASE = Object.freeze({
-  "version": "1.3.0",
+  "version": "1.4.0",
   "author": "WHY",
-  "date": "2026-11-24",
+  "date": "2026-11-25",
   "history": [
+    {
+      "version": "1.4.0",
+      "date": "2026-11-25",
+      "changes": [
+        "新增每日定時重啟、手動重啟指令及主程式看門狗。"
+      ]
+    },
     {
       "version": "1.3.0",
       "date": "2026-11-24",
